@@ -142,24 +142,28 @@ function Analytics({ tickets }) {
         }
       }
 
+      // Check if task is completed
+      const isCompleted = status.includes('done') || status.includes('complete');
+
       switch (dueDateStatus) {
         case 'overdue':
-          if (typeof points === 'number' && !isNaN(points)) {
+          // Only count overdue if not completed
+          if (typeof points === 'number' && !isNaN(points) && !isCompleted) {
             overdueStoryPoints += points;
           }
           break;
         case 'today':
-          if (typeof points === 'number' && !isNaN(points)) {
+          if (typeof points === 'number' && !isNaN(points) && !isCompleted) {
             todayStoryPoints += points;
           }
           break;
         case 'tomorrow':
-          if (typeof points === 'number' && !isNaN(points)) {
+          if (typeof points === 'number' && !isNaN(points) && !isCompleted) {
             tomorrowStoryPoints += points;
           }
           break;
         case 'future':
-          if (typeof points === 'number' && !isNaN(points)) {
+          if (typeof points === 'number' && !isNaN(points) && !isCompleted) {
             futureStoryPoints += points;
           }
           break;
