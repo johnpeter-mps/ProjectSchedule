@@ -83,15 +83,40 @@ function Analytics({ tickets }) {
       ? `${topEpic[0]} (${topEpic[1]} tickets, ${((topEpic[1] / tickets.length) * 100).toFixed(0)}%)`
       : 'No epics';
 
-    // Calculate sprint dates
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const sprintEndDate = new Date(today);
-    sprintEndDate.setDate(sprintEndDate.getDate() + 10);
+    // Extract sprint dates from tickets
+    let sprintStartDate = null;
+    let sprintEndDate = null;
+    
+    // Check for sprint information in tickets
+    tickets.forEach(ticket => {
+      const sprint = ticket.fields.sprint || 
+                     ticket.fields.customfield_10020?.[0] || 
+                     ticket.fields.customfield_10010?.[0];
+      
+      if (sprint) {
+        if (sprint.startDate && (!sprintStartDate || new Date(sprint.startDate) < new Date(sprintStartDate))) {
+          sprintStartDate = sprint.startDate;
+        }
+        if (sprint.endDate && (!sprintEndDate || new Date(sprint.endDate) > new Date(sprintEndDate))) {
+          sprintEndDate = sprint.endDate;
+        }
+      }
+    });
+
+    // Fallback to current date + 10 days if no sprint dates found
+    if (!sprintStartDate || !sprintEndDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      sprintStartDate = today.toISOString();
+      
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + 10);
+      sprintEndDate = endDate.toISOString();
+    }
 
     return {
-      startDate: today.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-      endDate: sprintEndDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      startDate: new Date(sprintStartDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      endDate: new Date(sprintEndDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
       totalResources: uniqueResources.size,
       epicConcentration: epicConcentration,
       totalEpics: sortedEpics.length
@@ -183,18 +208,44 @@ function Analytics({ tickets }) {
       }
     });
 
-    // Calculate sprint capacity
+    // Calculate sprint capacity using actual sprint dates
     const resourceCount = uniqueAssignees.size;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Sprint is 10 working days
-    const sprintEndDate = new Date(today);
-    sprintEndDate.setDate(sprintEndDate.getDate() + 10);
+    // Extract sprint dates from tickets
+    let sprintStartDate = null;
+    let sprintEndDate = null;
     
-    const totalSprintDays = 10; // Total sprint duration
+    tickets.forEach(ticket => {
+      const sprint = ticket.fields.sprint || 
+                     ticket.fields.customfield_10020?.[0] || 
+                     ticket.fields.customfield_10010?.[0];
+      
+      if (sprint) {
+        if (sprint.startDate && (!sprintStartDate || new Date(sprint.startDate) < new Date(sprintStartDate))) {
+          sprintStartDate = new Date(sprint.startDate);
+        }
+        if (sprint.endDate && (!sprintEndDate || new Date(sprint.endDate) > new Date(sprintEndDate))) {
+          sprintEndDate = new Date(sprint.endDate);
+        }
+      }
+    });
+    
+    // Fallback to 10 days if no sprint dates found
+    if (!sprintStartDate || !sprintEndDate) {
+      sprintStartDate = new Date(today);
+      sprintEndDate = new Date(today);
+      sprintEndDate.setDate(sprintEndDate.getDate() + 10);
+    }
+    
+    sprintStartDate.setHours(0, 0, 0, 0);
+    sprintEndDate.setHours(0, 0, 0, 0);
+    
+    // Calculate total sprint days
+    const totalSprintDays = Math.ceil((sprintEndDate - sprintStartDate) / (1000 * 60 * 60 * 24));
     const remainingDays = Math.max(0, Math.ceil((sprintEndDate - today) / (1000 * 60 * 60 * 24)));
-    const elapsedDays = totalSprintDays - remainingDays;
+    const elapsedDays = Math.max(0, totalSprintDays - remainingDays);
     
     const pointsPerResourcePerDay = 3;
     const totalSprintCapacity = resourceCount * totalSprintDays * pointsPerResourcePerDay;
