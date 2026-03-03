@@ -1,0 +1,124 @@
+.resource-quality {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.resource-quality h2 {
+  margin: 0 0 1rem 0;
+  color: #172b4d;
+  font-size: 1.5rem;
+}
+
+.what-to-infer {
+  background: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+}
+
+.what-to-infer strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #1976d2;
+  font-size: 1rem;
+}
+
+.what-to-infer p {
+  margin: 0;
+  color: #424242;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.resource-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.resource-table thead {
+  background: #f5f5f5;
+}
+
+.resource-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #172b4d;
+  border-bottom: 2px solid #ddd;
+}
+
+.resource-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+
+.resource-name {
+  font-weight: 600;
+  color: #172b4d;
+  background: #fafafa;
+}
+
+.ticket-link {
+  color: #0052cc;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ticket-link:hover {
+  text-decoration: underline;
+}
+
+.summary-cell {
+  max-width: 400px;
+  color: #42526e;
+}
+
+.points-cell {
+  text-align: center;
+}
+
+.points-badge {
+  background: #0052cc;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.warning-row {
+  background: #fff9e6;
+}
+
+.warning-row:hover {
+  background: #fff3cd;
+}
+
+.no-work-row {
+  background: #ffebee;
+}
+
+.no-work-row:hover {
+  background: #ffcdd2;
+}
+
+.no-tickets-message {
+  color: #d32f2f;
+  font-style: italic;
+  text-align: center;
+}
+
+.resource-table tbody tr:hover {
+  background: #f5f5f5;
+}
+
+.warning-row:hover,
+.no-work-row:hover {
+  opacity: 0.9;
+}
