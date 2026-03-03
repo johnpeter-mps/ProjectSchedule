@@ -49,13 +49,22 @@ function TicketList({ tickets, groupBy = 'date' }) {
 
   const groupTicketsByStatus = () => {
     const groups = {};
+    console.log('=== GROUPING TICKETS BY STATUS ===');
+    console.log('Total tickets to group:', tickets.length);
+    
     tickets.forEach(ticket => {
       const status = ticket.fields.status?.name || 'Unknown';
+      console.log(`Ticket ${ticket.key}: status="${status}"`);
+      
       if (!groups[status]) {
         groups[status] = [];
       }
       groups[status].push(ticket);
     });
+    
+    console.log('Status groups:', Object.keys(groups));
+    console.log('Group counts:', Object.entries(groups).map(([status, tickets]) => `${status}: ${tickets.length}`));
+    
     return groups;
   };
 

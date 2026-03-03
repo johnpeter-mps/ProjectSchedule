@@ -5,6 +5,7 @@ import Analytics from './components/Analytics';
 import Charts from './components/Charts';
 import TicketList from './components/TicketList';
 import SprintTrends from './components/SprintTrends';
+import ResourceQuality from './components/ResourceQuality';
 import './App.css';
 
 function App() {
@@ -417,6 +418,7 @@ function App() {
             <Analytics tickets={filteredTickets} />
             <Charts tickets={filteredTickets} />
             <SprintTrends currentSprintData={currentSprintData} sprintHistory={sprintHistory} />
+            <ResourceQuality tickets={filteredTickets} />
             <FilterCards 
               tickets={tickets}
               filteredTickets={filteredTickets}
