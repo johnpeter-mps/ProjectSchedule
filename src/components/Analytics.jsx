@@ -366,7 +366,7 @@ function Analytics({ tickets }) {
               {analytics.overdueTickets.map((ticket, index) => (
                 <div key={index} className="overdue-ticket-item">
                   <a
-                    href={`https://highwirepress.atlassian.net/browse/${ticket.key}`}
+                    href={`https://mpscentral.atlassian.net/browse/${ticket.key}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="overdue-ticket-link"
