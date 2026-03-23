@@ -5,34 +5,9 @@ import './Charts.css';
 function Charts({ tickets }) {
   const [selectedEpic, setSelectedEpic] = useState(null);
 
-  const getStoryPointValue = (ticket) => {
-    const fields = ticket.fields;
-    
-    // Check the actual story points fields based on console output
-    const fieldsToCheck = [
-      'customfield_10058',  // This appears to be the correct field
-      'customfield_10202',  // Alternative field
-      'customfield_10005',
-      'customfield_10308',
-      'customfield_10016',
-      'customfield_10026',
-      'customfield_10036',
-      'customfield_10106',
-      'customfield_10002',
-      'customfield_10004',
-      'storyPoints'
-    ];
-    
-    for (const fieldName of fieldsToCheck) {
-      if (fields[fieldName] !== null && fields[fieldName] !== undefined) {
-        const value = Number(fields[fieldName]);
-        if (!isNaN(value)) {
-          return value;
-        }
-      }
-    }
-    
-    return 0;
+  const getStoryPointValue = (issue) => {
+    const val = issue?.fields?.customfield_10033;
+    return (val !== null && val !== undefined) ? Number(val) : 0;
   };
 
   const getDueDateStatus = (dateString) => {
@@ -155,12 +130,9 @@ function Charts({ tickets }) {
       .sort((a, b) => b.totalPoints - a.totalPoints);
   };
 
-  const getEpicName = (ticket) => {
-    const fields = ticket.fields;
-    return fields.customfield_10014?.name || 
-           fields.customfield_10008?.name ||
-           fields.epic?.name ||
-           fields.parent?.fields?.summary ||
+  const getEpicName = (issue) => {
+    return issue?.fields?.parent?.fields?.summary || 
+           issue?.fields?.customfield_10014 || 
            'No Epic';
   };
 

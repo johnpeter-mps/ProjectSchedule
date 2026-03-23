@@ -24,7 +24,16 @@ function SprintTrends({ currentSprintData, sprintHistory: sprintHistoryProp }) {
   }, [sprintHistoryProp]);
 
   const formatChartData = () => {
-    return sprintHistory.map(sprint => {
+    const cleanHistory = [...sprintHistory]
+      .sort((a, b) => new Date(a.timestamp || a.date || a.sprintName) - 
+                      new Date(b.timestamp || b.date || b.sprintName))
+      .filter(s => {
+        const velocity = s.velocity || s.completedPoints || s.storyPoints || 0;
+        const completed = s.completedTickets || s.ticketsCompleted || 0;
+        return velocity <= 200 && completed <= 85;
+      });
+
+    return cleanHistory.map(sprint => {
       // Calculate on hold tickets from ticket details
       const onHoldTickets = sprint.ticketDetails?.filter(ticket => 
         ticket.status?.toLowerCase().includes('hold') || 

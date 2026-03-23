@@ -31,7 +31,6 @@ function App() {
 
   const fetchSprintHistory = async () => {
     try {
-      console.log('Fetching sprint history on page load...');
       const response = await fetch('https://kadj2jyknh.execute-api.us-east-1.amazonaws.com/dev/mps', {
         method: 'POST',
         headers: {
@@ -42,7 +41,7 @@ function App() {
 
       const rawText = await response.text();
       let parsedData = JSON.parse(rawText);
-      
+
       // Handle API Gateway response structure
       if (parsedData.body && typeof parsedData.body === 'string') {
         parsedData = JSON.parse(parsedData.body);
@@ -50,9 +49,8 @@ function App() {
       if (typeof parsedData === 'string') {
         parsedData = JSON.parse(parsedData);
       }
-      
+
       if (parsedData.sprintHistory) {
-        console.log('Sprint history loaded:', parsedData.sprintHistory.length, 'sprints');
         setSprintHistory(parsedData.sprintHistory);
       }
     } catch (err) {
@@ -63,57 +61,43 @@ function App() {
   const fetchTickets = async (jiraConfig) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('https://kadj2jyknh.execute-api.us-east-1.amazonaws.com/dev/mps', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jiraConfig),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch tickets: ${response.statusText}`);
-      }
-
-      const rawText = await response.text();
-      console.log('Raw response text:', rawText);
-      console.log('Raw response type:', typeof rawText);
-      
+      let allIssues = [];
+      let startAt = 0;
+      const maxResults = 50;
+      let total = 1;
       let parsedData;
-      try {
-        parsedData = JSON.parse(rawText);
-        console.log('First parse successful:', parsedData);
-        console.log('Parsed data type:', typeof parsedData);
-        
-        // Check if response has API Gateway structure (statusCode, body, headers)
-        if (parsedData.body && typeof parsedData.body === 'string') {
-          console.log('Detected API Gateway response structure, parsing body...');
-          parsedData = JSON.parse(parsedData.body);
-          console.log('Parsed body:', parsedData);
+
+      while (startAt < total) {
+        const response = await fetch("https://kadj2jyknh.execute-api.us-east-1.amazonaws.com/dev/mps", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...jiraConfig,
+            jql: jiraConfig.jql,
+            startAt,
+            maxResults
+          })
+        });
+
+        const raw = await response.json();
+        let parsed = raw;
+        if (typeof parsed === "string") parsed = JSON.parse(parsed);
+        if (parsed.body && typeof parsed.body === "string") parsed = JSON.parse(parsed.body);
+
+        // Capture extra fields from the first page
+        if (startAt === 0) {
+          parsedData = parsed;
         }
-        
-        // Check if it's still double-stringified
-        if (typeof parsedData === 'string') {
-          console.log('Data is still a string, parsing again...');
-          parsedData = JSON.parse(parsedData);
-        }
-      } catch (parseError) {
-        console.error('Parse error:', parseError);
-        throw new Error('Failed to parse response');
+
+        total = parsed.total || 0;
+        allIssues = [...allIssues, ...(parsed.issues || [])];
+        startAt += maxResults;
       }
-      
-      console.log('Final parsed data:', parsedData);
-      console.log('Issues array:', parsedData.issues);
-      console.log('Issues length:', parsedData.issues?.length);
-      
-      if (!parsedData.issues || !Array.isArray(parsedData.issues)) {
-        throw new Error('Invalid response format: issues array not found');
-      }
-      
-      setTickets(parsedData.issues);
-      setFilteredTickets(parsedData.issues);
+
+      setTickets(allIssues);
+      setFilteredTickets(allIssues);
       setConfig(jiraConfig);
       setActiveFilter({
         storyPoints: null,
@@ -122,13 +106,12 @@ function App() {
         epics: [],
         statuses: []
       });
-      
+
       // Store sprint history if included in response
       if (parsedData.sprintHistory) {
-        console.log('Sprint history received:', parsedData.sprintHistory.length, 'sprints');
         setSprintHistory(parsedData.sprintHistory);
       }
-      
+
       // Store story points field ID for later use
       if (parsedData.storyPointsFieldId) {
         window.storyPointsFieldId = parsedData.storyPointsFieldId;
@@ -149,40 +132,19 @@ function App() {
     }
   }, [tickets]);
 
-  const getStoryPointValue = (ticket) => {
-    const fields = ticket.fields;
-    const fieldsToCheck = [
-      'customfield_10058',
-      'customfield_10202',
-      'customfield_10005',
-      'customfield_10308',
-      'customfield_10016',
-      'customfield_10026',
-      'customfield_10036',
-      'customfield_10106',
-      'customfield_10002',
-      'customfield_10004',
-      'storyPoints'
-    ];
-    
-    for (const fieldName of fieldsToCheck) {
-      if (fields[fieldName] !== null && fields[fieldName] !== undefined) {
-        const value = Number(fields[fieldName]);
-        if (!isNaN(value)) {
-          return value;
-        }
-      }
-    }
-    return 0;
+  const getStoryPointValue = (issue) => {
+    const val = issue?.fields?.customfield_10033;
+    const points = (val !== null && val !== undefined) ? Number(val) : 0;
+    return points;
   };
 
   const getEpicName = (ticket) => {
     const fields = ticket.fields;
-    return fields.customfield_10014?.name || 
-           fields.customfield_10008?.name ||
-           fields.epic?.name ||
-           fields.parent?.fields?.summary ||
-           'No Epic';
+    return fields.customfield_10014?.name ||
+      fields.customfield_10008?.name ||
+      fields.epic?.name ||
+      fields.parent?.fields?.summary ||
+      'No Epic';
   };
 
   const calculateSprintData = (ticketList) => {
@@ -209,7 +171,7 @@ function App() {
       }
 
       totalStoryPoints += points;
-      
+
       if (isCompleted) {
         completedStoryPoints += points;
       }
@@ -248,7 +210,7 @@ function App() {
       });
     });
 
-    const productivity = totalStoryPoints > 0 
+    const productivity = totalStoryPoints > 0
       ? ((completedStoryPoints / totalStoryPoints) * 100).toFixed(1)
       : 0;
 
@@ -333,31 +295,31 @@ function App() {
         filtered = filtered.filter(t => {
           const fields = t.fields;
           return fields.customfield_10058 ||
-                 fields.customfield_10202 ||
-                 fields.customfield_10005 || 
-                 fields.customfield_10308 ||
-                 fields.customfield_10016 || 
-                 fields.customfield_10026 || 
-                 fields.customfield_10036 ||
-                 fields.customfield_10106 ||
-                 fields.customfield_10002 ||
-                 fields.customfield_10004 ||
-                 fields.storyPoints;
+            fields.customfield_10202 ||
+            fields.customfield_10005 ||
+            fields.customfield_10308 ||
+            fields.customfield_10016 ||
+            fields.customfield_10026 ||
+            fields.customfield_10036 ||
+            fields.customfield_10106 ||
+            fields.customfield_10002 ||
+            fields.customfield_10004 ||
+            fields.storyPoints;
         });
       } else {
         filtered = filtered.filter(t => {
           const fields = t.fields;
           return !(fields.customfield_10058 ||
-                   fields.customfield_10202 ||
-                   fields.customfield_10005 || 
-                   fields.customfield_10308 ||
-                   fields.customfield_10016 || 
-                   fields.customfield_10026 || 
-                   fields.customfield_10036 ||
-                   fields.customfield_10106 ||
-                   fields.customfield_10002 ||
-                   fields.customfield_10004 ||
-                   fields.storyPoints);
+            fields.customfield_10202 ||
+            fields.customfield_10005 ||
+            fields.customfield_10308 ||
+            fields.customfield_10016 ||
+            fields.customfield_10026 ||
+            fields.customfield_10036 ||
+            fields.customfield_10106 ||
+            fields.customfield_10002 ||
+            fields.customfield_10004 ||
+            fields.storyPoints);
         });
       }
     }
@@ -382,18 +344,18 @@ function App() {
     // Epic filter (multi-select)
     if (newFilter.epics.length > 0) {
       filtered = filtered.filter(t => {
-        const epic = t.fields.customfield_10014?.name || 
-                     t.fields.customfield_10008?.name ||
-                     t.fields.epic?.name ||
-                     t.fields.parent?.fields?.summary ||
-                     'No Epic';
+        const epic = t.fields.customfield_10014?.name ||
+          t.fields.customfield_10008?.name ||
+          t.fields.epic?.name ||
+          t.fields.parent?.fields?.summary ||
+          'No Epic';
         return newFilter.epics.includes(epic);
       });
     }
 
     // Status filter (multi-select)
     if (newFilter.statuses.length > 0) {
-      filtered = filtered.filter(t => 
+      filtered = filtered.filter(t =>
         newFilter.statuses.includes(t.fields.status?.name)
       );
     }
@@ -406,20 +368,20 @@ function App() {
       <header className="header">
         <h1>JIRA Dashboard</h1>
       </header>
-      
+
       <main className="main">
         {tickets.length === 0 && <JiraConfig onSubmit={fetchTickets} />}
-        
+
         {loading && <div className="loading">Loading tickets...</div>}
         {error && <div className="error">Error: {error}</div>}
-        
+
         {tickets.length > 0 && (
           <>
             <Analytics tickets={filteredTickets} />
             <Charts tickets={filteredTickets} />
             <SprintTrends currentSprintData={currentSprintData} sprintHistory={sprintHistory} />
             <ResourceQuality tickets={filteredTickets} />
-            <FilterCards 
+            <FilterCards
               tickets={tickets}
               filteredTickets={filteredTickets}
               onFilterChange={handleFilterChange}

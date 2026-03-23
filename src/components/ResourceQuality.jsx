@@ -3,30 +3,8 @@ import './ResourceQuality.css';
 
 function ResourceQuality({ tickets }) {
   const getStoryPointValue = (ticket) => {
-    const fields = ticket.fields;
-    const fieldsToCheck = [
-      'customfield_10058',
-      'customfield_10202',
-      'customfield_10005',
-      'customfield_10308',
-      'customfield_10016',
-      'customfield_10026',
-      'customfield_10036',
-      'customfield_10106',
-      'customfield_10002',
-      'customfield_10004',
-      'storyPoints'
-    ];
-    
-    for (const fieldName of fieldsToCheck) {
-      if (fields[fieldName] !== null && fields[fieldName] !== undefined) {
-        const value = Number(fields[fieldName]);
-        if (!isNaN(value)) {
-          return value;
-        }
-      }
-    }
-    return 0;
+    const val = ticket?.fields?.customfield_10033;
+    return (val !== null && val !== undefined) ? Number(val) : 0;
   };
 
   const getEpicName = (ticket) => {
@@ -87,6 +65,14 @@ function ResourceQuality({ tickets }) {
     return ticketsWithHighlight.sort((a, b) => a.resource.localeCompare(b.resource));
   };
 
+  if (!tickets || tickets.length === 0 || getResourceTableData().length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
+        No tickets currently in progress
+      </div>
+    );
+  }
+
   return (
     <div className="resource-quality">
       <h2>In Progress Tickets by Resource</h2>
@@ -117,7 +103,7 @@ function ResourceQuality({ tickets }) {
                 <td>{row.resource}</td>
                 <td>
                   <a 
-                    href={`https://highwirepress.atlassian.net/browse/${row.ticketId}`}
+                    href={`https://mpscentral.atlassian.net/browse/${row.ticketId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="ticket-link"

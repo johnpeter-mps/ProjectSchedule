@@ -6,7 +6,7 @@ function Analytics({ tickets }) {
     let count = 0;
     const current = new Date(startDate);
     const end = new Date(endDate);
-    
+
     while (current <= end) {
       const dayOfWeek = current.getDay();
       // 0 = Sunday, 6 = Saturday
@@ -15,52 +15,28 @@ function Analytics({ tickets }) {
       }
       current.setDate(current.getDate() + 1);
     }
-    
+
     return count;
   };
 
-  const getStoryPointValue = (ticket) => {
-    const fields = ticket.fields;
-    
-    // Check the actual story points fields based on console output
-    const fieldsToCheck = [
-      'customfield_10058',  // This appears to be the correct field
-      'customfield_10202',  // Alternative field
-      'customfield_10005',
-      'customfield_10308',
-      'customfield_10016',
-      'customfield_10026',
-      'customfield_10036',
-      'customfield_10106',
-      'customfield_10002',
-      'customfield_10004',
-      'storyPoints'
-    ];
-    
-    for (const fieldName of fieldsToCheck) {
-      if (fields[fieldName] !== null && fields[fieldName] !== undefined) {
-        const value = Number(fields[fieldName]);
-        if (!isNaN(value)) {
-          return value;
-        }
-      }
-    }
-    
-    return 0;
+  const getStoryPointValue = (issue) => {
+    const val = issue?.fields?.customfield_10033;
+    const points = (val !== null && val !== undefined) ? Number(val) : 0;
+    return points;
   };
 
   const getDueDateStatus = (dateString) => {
     if (!dateString) return 'none';
-    
+
     const dueDate = new Date(dateString);
     dueDate.setHours(0, 0, 0, 0);
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     if (dueDate < today) return 'overdue';
     if (dueDate.getTime() === today.getTime()) return 'today';
     if (dueDate.getTime() === tomorrow.getTime()) return 'tomorrow';
@@ -69,11 +45,11 @@ function Analytics({ tickets }) {
 
   const getEpicName = (ticket) => {
     const fields = ticket.fields;
-    return fields.customfield_10014?.name || 
-           fields.customfield_10008?.name ||
-           fields.epic?.name ||
-           fields.parent?.fields?.summary ||
-           'No Epic';
+    return fields.customfield_10014?.name ||
+      fields.customfield_10008?.name ||
+      fields.epic?.name ||
+      fields.parent?.fields?.summary ||
+      'No Epic';
   };
 
   const calculateSprintDetails = () => {
@@ -96,18 +72,18 @@ function Analytics({ tickets }) {
     // Find top epic
     const sortedEpics = Object.entries(epicCounts).sort((a, b) => b[1] - a[1]);
     const topEpic = sortedEpics.length > 0 ? sortedEpics[0] : ['None', 0];
-    const epicConcentration = sortedEpics.length > 0 
+    const epicConcentration = sortedEpics.length > 0
       ? `${topEpic[0]} (${topEpic[1]} tickets, ${((topEpic[1] / tickets.length) * 100).toFixed(0)}%)`
       : 'No epics';
 
     // Extract sprint dates - find the most common active sprint
     const sprintCounts = {};
-    
+
     tickets.forEach(ticket => {
-      const sprint = ticket.fields.sprint || 
-                     ticket.fields.customfield_10020?.[0] || 
-                     ticket.fields.customfield_10010?.[0];
-      
+      const sprint = ticket.fields.sprint ||
+        ticket.fields.customfield_10020?.[0] ||
+        ticket.fields.customfield_10010?.[0];
+
       if (sprint && sprint.state === 'active') {
         const sprintKey = `${sprint.startDate}_${sprint.endDate}`;
         if (!sprintCounts[sprintKey]) {
@@ -126,7 +102,7 @@ function Analytics({ tickets }) {
     const sortedSprints = Object.values(sprintCounts).sort((a, b) => b.count - a.count);
     let sprintStartDate = null;
     let sprintEndDate = null;
-    
+
     if (sortedSprints.length > 0) {
       sprintStartDate = sortedSprints[0].startDate;
       sprintEndDate = sortedSprints[0].endDate;
@@ -138,7 +114,7 @@ function Analytics({ tickets }) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       sprintStartDate = today.toISOString();
-      
+
       const endDate = new Date(today);
       endDate.setDate(endDate.getDate() + 10);
       sprintEndDate = endDate.toISOString();
@@ -156,11 +132,10 @@ function Analytics({ tickets }) {
   };
 
   const sprintDetails = calculateSprintDetails();
-  
+
   const calculateAnalytics = () => {
     let totalStoryPoints = 0;
     let completedStoryPoints = 0;
-    let inProgressStoryPoints = 0;
     let overdueTickets = [];
     let todayStoryPoints = 0;
     let tomorrowStoryPoints = 0;
@@ -177,11 +152,6 @@ function Analytics({ tickets }) {
       const status = ticket.fields.status?.name?.toLowerCase() || '';
       const assignee = ticket.fields.assignee?.displayName;
 
-      // Log first 3 tickets for debugging
-      if (totalStoryPoints < 20) {
-        console.log(`Ticket ${ticket.key}: customfield_10005=${ticket.fields.customfield_10005}, points=${points}, type=${typeof points}`);
-      }
-
       if (assignee) {
         uniqueAssignees.add(assignee);
       }
@@ -194,10 +164,6 @@ function Analytics({ tickets }) {
       if (status.includes('done') || status.includes('complete')) {
         if (typeof points === 'number' && !isNaN(points)) {
           completedStoryPoints += points;
-        }
-      } else if (status.includes('progress')) {
-        if (typeof points === 'number' && !isNaN(points)) {
-          inProgressStoryPoints += points;
         }
       }
 
@@ -246,31 +212,36 @@ function Analytics({ tickets }) {
     const resourceCount = uniqueAssignees.size;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const sprintStartDate = new Date(sprintDetails.sprintStartDate);
     const sprintEndDate = new Date(sprintDetails.sprintEndDate);
-    
+
     sprintStartDate.setHours(0, 0, 0, 0);
     sprintEndDate.setHours(0, 0, 0, 0);
-    
+
     // Calculate business days (excluding weekends)
     const totalSprintDays = countBusinessDays(sprintStartDate, sprintEndDate);
     const remainingDays = Math.max(0, countBusinessDays(today, sprintEndDate));
     const elapsedDays = Math.max(0, totalSprintDays - remainingDays);
-    
+
     const pointsPerResourcePerDay = 3;
     const totalSprintCapacity = resourceCount * totalSprintDays * pointsPerResourcePerDay;
     const expectedCompletedByNow = resourceCount * elapsedDays * pointsPerResourcePerDay;
     const remainingCapacity = resourceCount * remainingDays * pointsPerResourcePerDay;
     const remainingWork = totalStoryPoints - completedStoryPoints;
-    
+
     const capacityStatus = remainingWork <= remainingCapacity ? 'On Track' : 'At Risk';
     const completionStatus = completedStoryPoints >= expectedCompletedByNow ? 'On Track' : 'Behind Schedule';
+
+    const inProgressTickets = tickets.filter(issue => {
+      const status = issue.fields?.status?.name?.toLowerCase();
+      return status === 'in progress' || status === 'dev' || status === 'qa';
+    });
 
     return {
       totalStoryPoints,
       completedStoryPoints,
-      inProgressStoryPoints,
+      inProgressStoryPoints: inProgressTickets.length,
       overdueTickets,
       todayStoryPoints,
       tomorrowStoryPoints,
@@ -292,7 +263,7 @@ function Analytics({ tickets }) {
   };
 
   const analytics = calculateAnalytics();
-  
+
   console.log('Analytics Summary:', {
     totalStoryPoints: analytics.totalStoryPoints,
     completedStoryPoints: analytics.completedStoryPoints,
@@ -303,7 +274,7 @@ function Analytics({ tickets }) {
   return (
     <div className="analytics">
       <h2>Analytics</h2>
-      
+
       <div className="sprint-details-section">
         <h3>Sprint Details</h3>
         <div className="sprint-details-grid">
@@ -325,7 +296,7 @@ function Analytics({ tickets }) {
           </div>
         </div>
       </div>
-      
+
       <div className="analytics-grid">
         <div className="analytics-card">
           <div className="analytics-label">Total Story Points</div>
@@ -338,7 +309,7 @@ function Analytics({ tickets }) {
           </div>
         </div>
 
-        <div className="analytics-card" style={{ 
+        <div className="analytics-card" style={{
           borderLeft: `4px solid ${analytics.capacityStatus === 'On Track' ? '#00875a' : '#bf2600'}`
         }}>
           <div className="analytics-label">Remaining Points</div>
@@ -346,7 +317,7 @@ function Analytics({ tickets }) {
           <div className="analytics-subtitle">
             {analytics.resourceCount} resources × {analytics.remainingDays} days × 3 pts/day = {analytics.remainingCapacity} capacity
           </div>
-          <div className="analytics-subtitle" style={{ 
+          <div className="analytics-subtitle" style={{
             color: analytics.capacityStatus === 'On Track' ? '#00875a' : '#bf2600',
             fontWeight: 600,
             marginTop: '0.5rem'
@@ -364,7 +335,7 @@ function Analytics({ tickets }) {
           <div className="analytics-subtitle">
             {analytics.elapsedDays} days elapsed × {analytics.resourceCount} resources × 3 pts/day = {analytics.expectedCompletedByNow} expected
           </div>
-          <div className="analytics-subtitle" style={{ 
+          <div className="analytics-subtitle" style={{
             color: analytics.completionStatus === 'On Track' ? '#00875a' : '#bf2600',
             fontWeight: 600,
             marginTop: '0.5rem'
@@ -394,7 +365,7 @@ function Analytics({ tickets }) {
             <div className="overdue-tickets-list">
               {analytics.overdueTickets.map((ticket, index) => (
                 <div key={index} className="overdue-ticket-item">
-                  <a 
+                  <a
                     href={`https://highwirepress.atlassian.net/browse/${ticket.key}`}
                     target="_blank"
                     rel="noopener noreferrer"
