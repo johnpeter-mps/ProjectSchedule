@@ -90,8 +90,6 @@ function DeveloperAccordion({ tickets, allEpics = [] }) {
 
     // Rule 1: Description too short
     const description = extractDescriptionText(ticket.fields.description?.content) || '';
-    console.log('Description length:', description.length);
-    console.log('Description:', description);
     if (description.length < 200) {
       issues.push('Description too short (min 200 characters)');
     }
