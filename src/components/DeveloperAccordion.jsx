@@ -153,6 +153,9 @@ function DeveloperAccordion({ tickets, allEpics = [] }) {
           (t) => getStatusCategory(getStatus(t)) === 'Done'
         ).length;
         const otherCount = totalTickets - inProgressCount - doneCount;
+        const issuesCount = developerTickets.filter(
+          (t) => getValidationIssues(t).length > 0
+        ).length;
 
         // Calculate total story points
         const totalStoryPoints = developerTickets.reduce((sum, t) => sum + getStoryPoints(t), 0);
@@ -204,6 +207,19 @@ function DeveloperAccordion({ tickets, allEpics = [] }) {
               </div>
 
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {issuesCount > 0 && (
+                  <span style={{
+                    padding: '4px 8px',
+                    backgroundColor: '#fee2e2',
+                    color: '#dc2626',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Issues: {issuesCount}
+                  </span>
+                )}
                 <span style={{
                   padding: '4px 8px',
                   backgroundColor: '#fff',
