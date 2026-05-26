@@ -113,6 +113,7 @@ function App() {
       });
 
       const allIssues = parsed.issues || [];
+      window.__debug_tickets = allIssues;
       setTickets(allIssues);
       setFilteredTickets(allIssues);
       setConfig(jiraConfig);
@@ -235,7 +236,16 @@ function App() {
 
     return {
       sprintId: `sprint-${Date.now()}`,
-      sprintName: config?.sprintName || `Sprint ${new Date().toISOString().split('T')[0]}`,
+      sprintName: (() => {
+        for (const ticket of ticketList) {
+          const sprintField = ticket.fields?.customfield_10020;
+          if (Array.isArray(sprintField) && sprintField.length > 0) {
+            const activeSprint = sprintField.find(s => s.state === 'active') || sprintField[0];
+            if (activeSprint?.name) return activeSprint.name;
+          }
+        }
+        return config?.sprintName || `Sprint ${new Date().toISOString().split('T')[0]}`;
+      })(),
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
       totalStoryPoints,
@@ -400,6 +410,7 @@ function App() {
             <Charts tickets={filteredTickets} />
             <SprintTrends currentSprintData={currentSprintData} sprintHistory={sprintHistory} />
             <ResourceQuality tickets={filteredTickets} />
+            {(() => { window.__debug_filtered = filteredTickets; return null; })()}
             <DeveloperAccordion tickets={filteredTickets} allEpics={allEpics} />
             <FilterCards
               tickets={tickets}
