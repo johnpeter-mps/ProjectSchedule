@@ -105,7 +105,8 @@ function DeveloperAccordion({ tickets, allEpics = [] }) {
     const storyPoints = getStoryPoints(ticket);
     const dueDate = ticket.fields.duedate;
     const missingFields = [];
-    if (storyPoints === 0 || storyPoints === null) {
+
+    if (!storyPoints || storyPoints === 0) {
       missingFields.push('Story Points');
     }
     if (!dueDate) {
@@ -129,6 +130,26 @@ function DeveloperAccordion({ tickets, allEpics = [] }) {
     const epic = ticket.fields.parent?.fields?.summary;
     if (!epic) {
       issues.push('Epic not assigned. Please add an epic to this ticket');
+    }
+
+    // Rule 6: CS-Time Savings and Time Savings Achieved validation
+    const csTimeSavings = ticket.fields?.customfield_10120;
+    const timeSavingsAchieved = ticket.fields?.customfield_10424;
+
+    const missingTimeFields = [];
+    if (csTimeSavings === null || csTimeSavings === undefined) {
+      missingTimeFields.push('CS-Time Savings (Per Month)');
+    }
+    if (timeSavingsAchieved === null || timeSavingsAchieved === undefined) {
+      missingTimeFields.push('Time Savings Achieved');
+    }
+
+    if (missingTimeFields.length > 0) {
+      issues.push(`Missing required fields: ${missingTimeFields.join(', ')}`);
+    } else if (Number(csTimeSavings) !== Number(timeSavingsAchieved)) {
+      issues.push(
+        `Time Savings mismatch: CS-Time Savings (${csTimeSavings}) does not match Time Savings Achieved (${timeSavingsAchieved})`
+      );
     }
 
     return issues;
