@@ -218,6 +218,12 @@ function Analytics({ tickets }) {
     const remainingCapacity = resourceCount * remainingDays * pointsPerResourcePerDay;
     const remainingWork = totalStoryPoints - completedStoryPoints;
 
+    // Actual velocity based on real completed work
+const actualVelocity = elapsedDays > 0 && resourceCount > 0
+  ? parseFloat((completedStoryPoints / elapsedDays / resourceCount).toFixed(2))
+  : pointsPerResourcePerDay;
+const actualRemainingCapacity = Math.round(resourceCount * remainingDays * actualVelocity);
+
     const capacityStatus = remainingWork <= remainingCapacity ? 'On Track' : 'At Risk';
     const completionStatus = completedStoryPoints >= expectedCompletedByNow ? 'On Track' : 'Behind Schedule';
 
@@ -250,7 +256,9 @@ function Analytics({ tickets }) {
       remainingWork,
       capacityStatus,
       completionStatus,
-      totalSprintCapacity
+      totalSprintCapacity,
+      actualVelocity,
+      actualRemainingCapacity
     };
   };
 
@@ -302,24 +310,32 @@ function Analytics({ tickets }) {
         </div>
 
         <div className="analytics-card" style={{
-          borderLeft: `4px solid ${analytics.capacityStatus === 'On Track' ? '#00875a' : '#bf2600'}`
-        }}>
-          <div className="analytics-label">Remaining Points</div>
-          <div className="analytics-value">{analytics.remainingWork}/{analytics.remainingCapacity}</div>
-          <div className="analytics-subtitle">
-            {analytics.resourceCount} resources × {analytics.remainingDays} days × 3 pts/day = {analytics.remainingCapacity} capacity
-          </div>
-          <div className="analytics-subtitle" style={{
-            color: analytics.capacityStatus === 'On Track' ? '#00875a' : '#bf2600',
-            fontWeight: 600,
-            marginTop: '0.5rem'
-          }}>
-            {analytics.remainingWork} pts remaining - {analytics.capacityStatus}
-          </div>
-          <div className="analytics-inference">
-            Compare total work against remaining capacity to assess sprint feasibility.
-          </div>
-        </div>
+  borderLeft: `4px solid ${analytics.capacityStatus === 'On Track' ? '#00875a' : '#bf2600'}`
+}}>
+  <div className="analytics-label">Remaining Points</div>
+  <div className="analytics-value">{analytics.remainingWork}</div>
+  <div className="analytics-subtitle" style={{ marginTop: '0.5rem' }}>
+    📋 Planned capacity: <strong>{analytics.remainingCapacity} pts</strong>
+    <br />
+    ({analytics.resourceCount} × {analytics.remainingDays} days × 3 pts/day)
+  </div>
+  <div className="analytics-subtitle" style={{ marginTop: '0.4rem' }}>
+    📈 Actual capacity: <strong>{analytics.actualRemainingCapacity} pts</strong>
+    <br />
+    ({analytics.resourceCount} × {analytics.remainingDays} days × {analytics.actualVelocity} pts/day real velocity)
+  </div>
+  <div className="analytics-subtitle" style={{
+    color: analytics.remainingWork <= analytics.actualRemainingCapacity ? '#00875a' : '#bf2600',
+    fontWeight: 600,
+    marginTop: '0.5rem'
+  }}>
+    {analytics.remainingWork} pts remaining —{' '}
+    {analytics.remainingWork <= analytics.actualRemainingCapacity ? 'On Track' : 'At Risk'}
+  </div>
+  <div className="analytics-inference">
+    Planned uses 3 pts/day assumption. Actual uses real team velocity ({analytics.actualVelocity} pts/person/day) for a more accurate forecast.
+  </div>
+</div>
 
         <div className="analytics-card success">
           <div className="analytics-label">Completed Story Points</div>
